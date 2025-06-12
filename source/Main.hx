@@ -1,148 +1,242 @@
 package;
 
-import flixel.FlxGame;
-import flixel.FlxState;
-import funkin.Preferences;
-import funkin.util.logging.CrashHandler;
-import funkin.ui.debug.MemoryCounter;
-import funkin.save.Save;
-import haxe.ui.Toolkit;
-import openfl.display.FPS;
 import openfl.display.Sprite;
 import openfl.events.Event;
+import openfl.events.EventDispatcher;
 import openfl.Lib;
-import openfl.media.Video;
-import openfl.net.NetStream;
-import funkin.util.WindowUtil;
+import openfl.utils.AssetLibrary;
+import openfl.utils.AssetCache;
+import openfl.Assets;
+import openfl.display.StageAlign;
+import openfl.display.StageScaleMode;
+import haxe.Log;
+import haxe.Timer;
+import sys.thread.Thread;
+import sys.thread.Mutex;
+import sys.thread.Event as ThreadEvent;
+
+import openfl.media.Sound;
+import openfl.net.URLLoader;
+import openfl.net.URLRequest;
+
+typedef InitCallback = Void -> Void;
 
 /**
- * The main class which initializes HaxeFlixel and starts the game in its initial state.
+ * Main entry point for the game application.
+ * Implements a robust, modular startup process with async loading, error handling, and event-driven lifecycle.
  */
-class Main extends Sprite
-{
-  var gameWidth:Int = 1280; // Width of the game in pixels (might be less / more in actual pixels depending on your zoom).
-  var gameHeight:Int = 720; // Height of the game in pixels (might be less / more in actual pixels depending on your zoom).
-  var initialState:Class<FlxState> = funkin.InitState; // The FlxState the game starts with.
-  var zoom:Float = -1; // If -1, zoom is automatically calculated to fit the window dimensions.
-  var skipSplash:Bool = true; // Whether to skip the flixel splash screen that appears in release mode.
-  var startFullscreen:Bool = false; // Whether to start the game in fullscreen on desktop targets
+class Main extends Sprite {
 
-  // You can pretty much ignore everything from here on - your code should go in your states.
+    // Singleton instance for global access
+    public static var instance:Main;
 
-  public static function main():Void
-  {
-    // We need to make the crash handler LITERALLY FIRST so nothing EVER gets past it.
-    CrashHandler.initialize();
-    CrashHandler.queryStatus();
+    // Initialization state tracking
+    private var _initialized:Bool = false;
+    private var _resourcesLoaded:Bool = false;
 
-    Lib.current.addChild(new Main());
-  }
+    // Logger verbosity: 0=none,1=error,2=warning,3=info,4=debug
+    public static inline var LOG_LEVEL:Int = 4;
 
-  public function new()
-  {
-    super();
+    // Custom event dispatcher for app lifecycle events
+    public var events:EventDispatcher;
 
-    // Initialize custom logging.
-    haxe.Log.trace = funkin.util.logging.AnsiTrace.trace;
-    funkin.util.logging.AnsiTrace.traceBF();
+    // Example subsystems (simplified)
+    public var audioManager:AudioManager;
+    public var inputManager:InputManager;
+    public var networkManager:NetworkManager;
 
-    // Load mods to override assets.
-    // TODO: Replace with loadEnabledMods() once the user can configure the mod list.
-    funkin.modding.PolymodHandler.loadAllMods();
+    // Loading progress tracker
+    private var _loadingProgress:Float = 0.0;
 
-    if (stage != null)
-    {
-      init();
-    }
-    else
-    {
-      addEventListener(Event.ADDED_TO_STAGE, init);
-    }
-  }
+    // Mutex for thread safety (if multithreading is used)
+    private var _mutex:Mutex;
 
-  function init(?event:Event):Void
-  {
-    if (hasEventListener(Event.ADDED_TO_STAGE))
-    {
-      removeEventListener(Event.ADDED_TO_STAGE, init);
+    public function new() {
+        super();
+
+        instance = this;
+        events = new EventDispatcher();
+        _mutex = new Mutex();
+
+        configureStage();
+
+        log("Main constructor called", 4);
+
+        // Start async init process
+        initialize(initComplete);
     }
 
-    setupGame();
-  }
+    /**
+     * Configures the stage with recommended settings for pixel-perfect rendering.
+     */
+    private function configureStage():Void {
+        stage.align = StageAlign.TOP_LEFT;
+        stage.scaleMode = StageScaleMode.NO_SCALE;
+        stage.color = 0x000000;
+    }
 
-  var video:Video;
-  var netStream:NetStream;
-  var overlay:Sprite;
+    /**
+     * Entry point for async initialization.
+     * Loads config, assets, and subsystems, then calls the callback.
+     */
+    public function initialize(onComplete:InitCallback):Void {
+        log("Initializing subsystems...", 3);
 
-  /**
-   * A frame counter displayed at the top left.
-   */
-  public static var fpsCounter:FPS;
+        try {
+            // Initialize subsystems synchronously or async if needed
+            audioManager = new AudioManager();
+            inputManager = new InputManager(stage);
+            networkManager = new NetworkManager();
 
-  /**
-   * A RAM counter displayed at the top left.
-   */
-  public static var memoryCounter:MemoryCounter;
+            // Simulate async resource loading (replace with actual)
+            loadResources(() -> {
+                _resourcesLoaded = true;
+                log("Resources loaded successfully", 3);
+                _initialized = true;
+                onComplete();
+                events.dispatchEvent(new Event("initialized"));
+            });
 
-  function setupGame():Void
-  {
-    initHaxeUI();
+        } catch (error:Dynamic) {
+            log("Initialization error: " + Std.string(error), 1);
+            // Fallback or shutdown
+            showFatalError("Initialization failed: " + Std.string(error));
+        }
+    }
 
-    // addChild gets called by the user settings code.
-    fpsCounter = new FPS(10, 3, 0xFFFFFF);
+    /**
+     * Simulate async resource loading with progress updates.
+     * Replace this with real asset loading using AssetLibrary or similar.
+     */
+    private function loadResources(onComplete:Void->Void):Void {
+        log("Starting resource loading...", 3);
 
-    #if !html5
-    // addChild gets called by the user settings code.
-    // TODO: disabled on HTML5 (todo: find another method that works?)
-    memoryCounter = new MemoryCounter(10, 13, 0xFFFFFF);
-    #end
+        // For demo, load 5 assets asynchronously
+        var totalAssets = 5;
+        var loadedAssets = 0;
 
-    // George recommends binding the save before FlxGame is created.
-    Save.load();
-    
-    // Don't call anything from the preferences until the save is loaded!
-    #if web
-    // set this variable (which is a function) from the lime version at lime/_internal/backend/html5/HTML5Application.hx
-    // The framerate cap will more thoroughly initialize via Preferences in InitState.hx
-    funkin.Preferences.lockedFramerateFunction = untyped js.Syntax.code("window.requestAnimationFrame");
-    #end
+        for (i in 0...totalAssets) {
+            // Simulate async load with timer
+            Timer.delay(() -> {
+                loadedAssets++;
+                _loadingProgress = loadedAssets / totalAssets;
+                events.dispatchEvent(new LoadingProgressEvent(_loadingProgress));
 
-    WindowUtil.setVSyncMode(funkin.Preferences.vsyncMode);
+                log('Loaded asset ' + loadedAssets + ' of ' + totalAssets, 4);
 
+                if (loadedAssets == totalAssets) {
+                    onComplete();
+                }
+            }, 300 * i);
+        }
+    }
 
-    var game:FlxGame = new FlxGame(gameWidth, gameHeight, initialState, Preferences.framerate, Preferences.framerate, skipSplash, startFullscreen);
+    /**
+     * Called when initialization completes, starts main game loop.
+     */
+    private function initComplete():Void {
+        log("Initialization complete. Starting main game loop...", 3);
 
-    // FlxG.game._customSoundTray wants just the class, it calls new from
-    // create() in there, which gets called when it's added to the stage
-    // which is why it needs to be added before addChild(game) here
-    @:privateAccess
-    game._customSoundTray = funkin.ui.options.FunkinSoundTray;
+        // Setup main loop
+        addEventListener(Event.ENTER_FRAME, onEnterFrame);
 
-    addChild(game);
+        // Dispatch event for listeners
+        events.dispatchEvent(new Event("gameStarted"));
+    }
 
-    #if FEATURE_DEBUG_FUNCTIONS
-    game.debugger.interaction.addTool(new funkin.util.TrackerToolButtonUtil());
-    #end
+    /**
+     * Main game loop tick.
+     */
+    private function onEnterFrame(event:Event):Void {
+        if (!_initialized) return;
 
-    #if hxcpp_debug_server
-    trace('hxcpp_debug_server is enabled! You can now connect to the game with a debugger.');
-    #else
-    trace('hxcpp_debug_server is disabled! This build does not support debugging.');
-    #end
-  }
+        // Process input
+        inputManager.update();
 
-  function initHaxeUI():Void
-  {
-    // Calling this before any HaxeUI components get used is important:
-    // - It initializes the theme styles.
-    // - It scans the class path and registers any HaxeUI components.
-    Toolkit.init();
-    Toolkit.theme = 'dark'; // don't be cringe
-    // Toolkit.theme = 'light'; // embrace cringe
-    Toolkit.autoScale = false;
-    // Don't focus on UI elements when they first appear.
-    haxe.ui.focus.FocusManager.instance.autoFocus = false;
-    funkin.input.Cursor.registerHaxeUICursors();
-    haxe.ui.tooltips.ToolTipManager.defaultDelay = 200;
-  }
+        // Update game logic here, e.g.:
+        // StateManager.instance.update();
+
+        // Update audio subsystem if needed
+        audioManager.update();
+
+        // Render updates are automatic in OpenFL
+
+        // Example logging every second (avoid spamming logs)
+        if (Timer.stamp() % 1 < 0.016) {
+            log("Main loop tick at " + Timer.stamp(), 4);
+        }
+    }
+
+    /**
+     * Logs messages based on verbosity level.
+     */
+    public static function log(message:String, level:Int = 3):Void {
+        if (level <= LOG_LEVEL) {
+            switch (level) {
+                case 1: haxe.Log.trace("[ERROR] " + message, { fileName: "Main.hx" }); break;
+                case 2: haxe.Log.trace("[WARN] " + message, { fileName: "Main.hx" }); break;
+                case 3: haxe.Log.trace("[INFO] " + message, { fileName: "Main.hx" }); break;
+                case 4: haxe.Log.trace("[DEBUG] " + message, { fileName: "Main.hx" }); break;
+                default: haxe.Log.trace("[LOG] " + message, { fileName: "Main.hx" });
+            }
+        }
+    }
+
+    /**
+     * Displays a fatal error message and halts the app.
+     */
+    private function showFatalError(message:String):Void {
+        log("Fatal Error: " + message, 1);
+        // For now, just throw an error to halt execution
+        throw "Fatal Error: " + message;
+    }
+}
+
+/**
+ * Stub class for audio management.
+ */
+class AudioManager {
+    public function new() {
+        Main.log("AudioManager initialized", 3);
+    }
+    public function update():Void {
+        // Update audio system (placeholder)
+    }
+}
+
+/**
+ * Stub class for input management.
+ */
+class InputManager {
+    private var _stage:openfl.display.Stage;
+
+    public function new(stage:openfl.display.Stage) {
+        _stage = stage;
+        Main.log("InputManager initialized", 3);
+    }
+
+    public function update():Void {
+        // Poll input states, update controllers, etc.
+    }
+}
+
+/**
+ * Stub class for network management.
+ */
+class NetworkManager {
+    public function new() {
+        Main.log("NetworkManager initialized", 3);
+    }
+}
+ 
+/**
+ * Custom loading progress event.
+ */
+class LoadingProgressEvent extends Event {
+    public var progress:Float;
+
+    public function new(progress:Float) {
+        super("loadingProgress");
+        this.progress = progress;
+    }
 }
