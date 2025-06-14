@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
   <!-- Project Identity -->
-  <meta title="FunkinStudios" package="com.yourname.funkin" version="0.0.0" company="HenryCodesFnF" VersionState="Alpha" />
+  <meta title="FunkinStudios" package="com.HenryCodesFnF.FunkinStudios" version="0.0.0" company="HenryCodesFnF" VersionState="Alpha" />
 
   <!-- Haxe Version and Target -->
   <haxelib name="lime" />
@@ -11,7 +11,11 @@
   <haxelib name="haxeui-core" />
   <haxelib name="haxeui-openfl" />
   <haxelib name="actuate" />
-
+  <haxelib name="polymod" />
+  <haxelib name="discord-rpc" />
+  <haxelib name="hscript" />
+  <haxelib name="hmm" />
+  <haxelib name="hxjsonast" />
   <!-- Output -->
   <app main="Main" file="FunkinSuperAdvanced" path="Export" />
 

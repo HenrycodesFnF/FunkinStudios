@@ -228,7 +228,7 @@ class NetworkManager {
         Main.log("NetworkManager initialized", 3);
     }
 }
- 
+
 /**
  * Custom loading progress event.
  */
