@@ -6,7 +6,7 @@
     { "name": "flixel-addons", "type": "haxelib", "version": "2.11.0" },
     { "name": "flixel-ui", "type": "haxelib", "version": "2.5.0" },
     { "name": "haxeui-core", "type": "haxelib", "version": "1.0.13" },
-    { "name": "haxeui-openfl", "type": "haxelib", "version": "1.0.9" },
+    { "name": "haxeui-openfl", "type": "haxelib", "version": "1.5.0" },
     { "name": "actuate", "type": "haxelib", "version": "1.8.9" },
     { "name": "polymod", "type": "haxelib", "version": "1.4.2" },
     { "name": "hscript", "type": "haxelib", "version": "2.5.0" },

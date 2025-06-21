@@ -3,7 +3,7 @@
   <!-- Project Identity -->
   <meta title="FunkinStudios" package="com.HenryCodesFnF.FunkinStudios" version="0.0.0" company="HenryCodesFnF" VersionState="Alpha" />
 
-  <!-- Haxe Version and Target -->
+  <!-- Haxe Libraries -->
   <haxelib name="lime" />
   <haxelib name="openfl" />
   <haxelib name="flixel" />
@@ -16,15 +16,16 @@
   <haxelib name="hscript" />
   <haxelib name="hmm" />
   <haxelib name="hxjsonast" />
-  <!-- Output -->
-  <app main="Main" file="FunkinSuperAdvanced" path="Export" />
 
-  <!-- Platforms -->
+  <!-- Output -->
+  <app main="Main" file="FunkinStudios" path="Export" />
+
+  <!-- Window Settings -->
   <set name="window.width" value="1280" />
   <set name="window.height" value="720" />
   <set name="window.minWidth" value="640" />
   <set name="window.minHeight" value="360" />
-  <set name="window.title" value="Funkin Super Advanced" />
+  <set name="window.title" value="FunkinStudios" />
   <set name="window.vsync" value="true" />
   <set name="window.resizable" value="true" />
   <set name="window.fullscreen" value="false" />
@@ -37,7 +38,7 @@
   <assets path="assets/music" rename="music" />
   <assets path="assets/xml" rename="xml" />
 
-  <!-- Defines (compile-time flags) -->
+  <!-- Compile-Time Defines -->
   <define name="HXCPP_VISIT_ALLOCS" if="cpp" />
   <define name="HXCPP_DEBUG" if="debug" />
   <define name="HXCPP_STACK_TRACE" if="debug" />
@@ -55,7 +56,7 @@
   <define name="FEATURE_GHOST_TAPPING" />
   <define name="USE_HMM" />
 
-  <!-- Debug/Release Builds -->
+  <!-- Build Configs -->
   <config if="debug">
     <define name="debug" />
     <set name="window.vsync" value="false" />
@@ -69,13 +70,13 @@
     <set name="openfl.display.Loader.enableCodeImport" value="false" />
   </config>
 
-  <!-- Lime/OpenFL Config -->
+  <!-- Lime/OpenFL Settings -->
   <set name="openfl.render" value="auto" />
   <set name="openfl.text.engine" value="native" />
   <set name="lime.audio.backend" value="default" />
   <set name="lime.window.render" value="opengl" />
 
-  <!-- Libraries Linking -->
+  <!-- Libraries (Optional Linking) -->
   <library name="flixel" />
   <library name="flixel-addons" />
   <library name="openfl" />
@@ -84,7 +85,7 @@
   <library name="haxeui-core" />
   <library name="haxeui-openfl" />
 
-  <!-- Additional Compilation Options -->
+  <!-- Compilation Flags -->
   <haxeflag name="-dce full" />
   <haxeflag name="-v" />
   <haxeflag name="-lib hxcpp" if="cpp" />
@@ -92,10 +93,10 @@
   <haxeflag name="-debug" if="debug" />
   <haxeflag name="-D analyzer-optimize" />
 
-  <!-- Source Paths -->
+  <!-- Source Code -->
   <source path="source" />
 
-  <!-- Platform Specifics -->
+  <!-- Platform Specific Icons -->
   <config if="windows">
     <set name="window.icon" value="assets/icon.ico" />
   </config>
@@ -108,24 +109,11 @@
     <set name="window.icon" value="assets/icon.png" />
   </config>
 
-  <!-- HTML5 specifics -->
-  <config if="html5">
-    <set name="openfl.html5.threads" value="true" />
-    <set name="window.title" value="Funkin Super Advanced - HTML5" />
-  </config>
-
-  <!-- Mobile platforms (optional) -->
-  <config if="android">
-    <set name="window.fullscreen" value="true" />
-  </config>
-
-  <config if="ios">
-    <set name="window.fullscreen" value="true" />
-  </config>
-
+  <!-- VSCode Integration (Commented - Not Standard Lime Tag) -->
+ 
   <Vscode if="windows">
     <set name="vscode.debug" value="true" />
     <set name="vscode.launch" value="launch.json" />
   </Vscode>
-  
+
 </project>

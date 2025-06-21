@@ -1,0 +1,26 @@
+{
+  "haxe.executable": "haxe",
+  "haxe.displayServer": true,
+  "haxe.enableCodeLens": true,
+  "haxe.enableCompletionWithSnippets": true,
+  "files.associations": {
+    "*.hx": "haxe",
+    "*.hxp": "xml",
+    "*.json": "json"
+  },
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "export": true
+  },
+  "search.exclude": {
+    "export": true
+  },
+  "haxe.displayConfigurations": [
+    {
+      "name": "windows",
+      "args": ["-lib", "openfl", "-lib", "flixel", "-lib", "flixel-addons", "-lib", "flixel-ui", "-lib", "polymod", "-lib", "actuate", "-lib", "hscript", "-lib", "hxjsonast", "-lib", "haxeui-core"]()

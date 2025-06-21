@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "nadako.vshaxe",           // Haxe language support
+    "lix.lix",                 // Haxe + Lix integration
+    "openfl.openfl",           // OpenFL support
+    "haxeflixel.haxeflixel",   // HaxeFlixel support
+    "ms-vscode.cpptools",      // C++ tools (for native dependencies)
+    "esbenp.prettier-vscode",  // Prettier for formatting
+    "editorconfig.editorconfig"// Keep formatting consistent
+  ]
+}
